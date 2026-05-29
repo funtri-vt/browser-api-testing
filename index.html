@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser API & Storage Testing Suite</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --success: #4ade80;
+            --fail: #f87171;
+            --warning: #fbbf24;
+            --border: #334155;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        h1 span {
+            color: var(--accent);
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: var(--bg-color);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .test-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .test-item:last-child {
+            border-bottom: none;
+        }
+
+        .test-info h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .test-info p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge.pass { background-color: rgba(74, 222, 128, 0.15); color: var(--success); }
+        .badge.fail { background-color: rgba(248, 113, 113, 0.15); color: var(--fail); }
+        .badge.warn { background-color: rgba(251, 191, 36, 0.15); color: var(--warning); }
+        .badge.pending { background-color: rgba(148, 163, 184, 0.15); color: var(--text-muted); }
+
+        .meta-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Browser <span>Storage & API</span> Tester</h1>
+            <p style="color: var(--text-muted); margin: 0.25rem 0 0 0;">Diagnostic engine for hardware-independent web capabilities</p>
+        </div>
+        <button class="btn" id="runBtn">Run Suite</button>
+    </header>
+
+    <div class="grid">
+        <div class="card">
+            <h2>Permanent Storage & Quotas</h2>
+            <div class="meta-box" id="quotaDisplay">
+                Storage Quota: Run tests to calculate...
+            </div>
+            <div id="storageTests">
+                </div>
+        </div>
+
+        <div class="card">
+            <h2>Core API Availability</h2>
+            <div class="meta-box" id="browserDisplay">
+                User Agent: Loading...
+            </div>
+            <div id="apiTests">
+                </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('browserDisplay').innerText = navigator.userAgent;
+
+    const storageTestDefinitions = [
+        {
+            name: "LocalStorage",
+            desc: "Synchronous key-value pair storage.",
+            test: async () => {
+                localStorage.setItem('__test_key__', 'test_val');
+                const val = localStorage.getItem('__test_key__');
+                localStorage.removeItem('__test_key__');
+                return val === 'test_val' ? {status: 'pass', details: 'Available & Writable'} : {status: 'fail'};
+            }
+        },
+        {
+            name: "SessionStorage",
+            desc: "Tab-scoped synchronous key-value storage.",
+            test: async () => {
+                sessionStorage.setItem('__test_key__', 'test_val');
+                const val = sessionStorage.getItem('__test_key__');
+                sessionStorage.removeItem('__test_key__');
+                return val === 'test_val' ? {status: 'pass', details: 'Available & Writable'} : {status: 'fail'};
+            }
+        },
+        {
+            name: "IndexedDB",
+            desc: "Asynchronous transactional object database.",
+            test: () => {
+                return new Promise((resolve) => {
+                    if (!window.indexedDB) resolve({status: 'fail'});
+                    const request = indexedDB.open('__test_db__', 1);
+                    request.onsuccess = (e) => {
+                        const db = e.target.result;
+                        db.close();
+                        indexedDB.deleteDatabase('__test_db__');
+                        resolve({status: 'pass', details: 'Operational'});
+                    };
+                    request.onerror = () => resolve({status: 'fail', details: 'Database blocked or denied'});
+                });
+            }
+        },
+        {
+            name: "Cache API",
+            desc: "Request/Response pair caching mechanism.",
+            test: async () => {
+                if (!('caches' in window)) return {status: 'fail'};
+                const cache = await caches.open('__test_cache__');
+                await cache.put(new Request('https://test.com'), new Response('test'));
+                await caches.delete('__test_cache__');
+                return {status: 'pass', details: 'Operational'};
+            }
+        },
+        {
+            name: "Origin Private File System (OPFS)",
+            desc: "High-performance private filesystem endpoint.",
+            test: async () => {
+                if (!navigator.storage || !navigator.storage.getDirectory) {
+                    return {status: 'fail', details: 'Not supported'};
+                }
+                const root = await navigator.storage.getDirectory();
+                const fileHandle = await root.getFileHandle('__test_file__', { create: true });
+                await root.removeEntry('__test_file__');
+                return {status: 'pass', details: 'Direct filesystem write access allowed'};
+            }
+        },
+        {
+            name: "Persistent Storage Status",
+            desc: "Determines if data protection from eviction is active.",
+            test: async () => {
+                if (!navigator.storage || !navigator.storage.persisted) {
+                    return {status: 'warn', details: 'StorageManager API missing'};
+                }
+                const isPersisted = await navigator.storage.persisted();
+                return isPersisted 
+                    ? {status: 'pass', details: 'Persistent (Safe from automated clearing)'} 
+                    : {status: 'warn', details: 'Best-Effort (Browser may evict if disk is low)'};
+            }
+        }
+    ];
+
+    const apiTestDefinitions = [
+        {
+            name: "Service Workers",
+            desc: "Background script execution for offline control.",
+            test: async () => ('serviceWorker' in navigator) ? {status: 'pass', details: 'Supported'} : {status: 'fail'}
+        },
+        {
+            name: "Web Workers",
+            desc: "Multi-threading capabilities outside UI thread.",
+            test: async () => (typeof(Worker) !== "undefined") ? {status: 'pass', details: 'Supported'} : {status: 'fail'}
+        },
+        {
+            name: "WebSockets",
+            desc: "Full-duplex persistent TCP connections.",
+            test: async () => ('WebSocket' in window) ? {status: 'pass', details: 'Supported'} : {status: 'fail'}
+        },
+        {
+            name: "WebRTC",
+            desc: "Real-Time peer-to-peer audio/video streaming.",
+            test: async () => ('RTCPeerConnection' in window) ? {status: 'pass', details: 'Supported'} : {status: 'fail'}
+        },
+        {
+            name: "Geolocation API",
+            desc: "User geographic location access.",
+            test: async () => ('geolocation' in navigator) ? {status: 'pass', details: 'Available (Requires Permission)'} : {status: 'fail'}
+        },
+        {
+            name: "Web Audio API",
+            desc: "Audio processing and synthesis natively.",
+            test: async () => (window.AudioContext || window.webkitAudioContext) ? {status: 'pass', details: 'Supported'} : {status: 'fail'}
+        }
+    ];
+
+    function setupUI() {
+        const populateTable = (containerId, definitions) => {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            definitions.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'test-item';
+                row.innerHTML = `
+                    <div class="test-info">
+                        <h3>${item.name}</h3>
+                        <p>${item.desc}</p>
+                        <small id="${containerId}-details-${index}" style="color: var(--accent); display:none;"></small>
+                    </div>
+                    <div>
+                        <span id="${containerId}-badge-${index}" class="badge pending">Pending</span>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        };
+
+        populateTable('storageTests', storageTestDefinitions);
+        populateTable('apiTests', apiTestDefinitions);
+    }
+
+    async function runSuite() {
+        document.getElementById('runBtn').disabled = true;
+        document.getElementById('runBtn').innerText = "Testing...";
+
+        // Handle Quota Calculations
+        const quotaDisplay = document.getElementById('quotaDisplay');
+        if (navigator.storage && navigator.storage.estimate) {
+            const {usage, quota} = await navigator.storage.estimate();
+            const usageMB = (usage / (1024 * 1024)).toFixed(2);
+            const quotaGB = (quota / (1024 * 1024 * 1024)).toFixed(2);
+            quotaDisplay.innerHTML = `Used: <strong>${usageMB} MB</strong> / Available: <strong>${quotaGB} GB</strong>`;
+        } else {
+            quotaDisplay.innerText = "Storage estimation API not supported.";
+        }
+
+        // Helper executor
+        const runTests = async (containerId, definitions) => {
+            for(let i = 0; i < definitions.length; i++) {
+                const badge = document.getElementById(`${containerId}-badge-${i}`);
+                const detailEl = document.getElementById(`${containerId}-details-${i}`);
+                try {
+                    const result = await definitions[i].test();
+                    badge.className = `badge ${result.status}`;
+                    badge.innerText = result.status;
+                    if(result.details) {
+                        detailEl.innerText = result.details;
+                        detailEl.style.display = 'block';
+                    }
+                } catch (err) {
+                    badge.className = 'badge fail';
+                    badge.innerText = 'error';
+                    detailEl.innerText = err.message;
+                    detailEl.style.display = 'block';
+                }
+            }
+        };
+
+        await runTests('storageTests', storageTestDefinitions);
+        await runTests('apiTests', apiTestDefinitions);
+
+        document.getElementById('runBtn').disabled = false;
+        document.getElementById('runBtn').innerText = "Re-run Suite";
+    }
+
+    setupUI();
+    document.getElementById('runBtn').addEventListener('click', runSuite);
+</script>
+</body>
+</html>
